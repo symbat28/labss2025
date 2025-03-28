@@ -19,7 +19,13 @@ def average(movies):
 
 #5
 def average_imdb_by_category(movies, category):
-    return average_imdb_score(movies_in_category(movies, category))
+    category_movies = [movie for movie in movies if movie['category'] == category]
+    if not category_movies:
+        return 0
+    total_score = sum(movie['imdb'] for movie in category_movies)
+    return total_score / len(category_movies)
+
+
 
 
 
