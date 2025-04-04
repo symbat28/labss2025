@@ -11,14 +11,14 @@ pygame.display.set_caption("Racer with Coins & Enemies")
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 
-# 加载图像
-bg_img = pygame.image.load("road.png")  # 背景图（建议大小 500x600）
+
+bg_img = pygame.image.load("road.png")  #background(road)
 car_img = pygame.image.load("car.png")
 coin_img = pygame.image.load("coin.png")
 silver_coin_img = pygame.image.load("s_coin.png")
 enemy_img = pygame.image.load("Enemy.png")
 
-# 缩放图像
+
 bg_img = pygame.transform.scale(bg_img, (WIDTH, HEIGHT))
 
 class Player(pygame.sprite.Sprite):
@@ -66,7 +66,7 @@ class Coin(pygame.sprite.Sprite):
         if self.rect.top > HEIGHT:
             self.kill()
 
-# 定时事件
+
 ADD_COIN = pygame.USEREVENT + 1
 ADD_ENEMY = pygame.USEREVENT + 2
 pygame.time.set_timer(ADD_COIN, 1000)
@@ -85,7 +85,7 @@ font = pygame.font.SysFont("Arial", 30)
 running = True
 
 while running:
-    win.blit(bg_img, (0, 0))  # 背景图
+    win.blit(bg_img, (0, 0))  # background
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -98,7 +98,7 @@ while running:
             all_sprites.add(coin)
 
         if event.type == ADD_ENEMY:
-            # 检查是否有足够空间生成敌人，避免重叠
+            
             new_enemy = Enemy(enemy_speed)
             overlap = False
             for enemy in enemies:
@@ -113,12 +113,12 @@ while running:
     coins.update()
     enemies.update()
 
-    # 收集金币
+
     collected_coins = pygame.sprite.spritecollide(player, coins, True)
     for coin in collected_coins:
         coin_count += coin.value
 
-    # 碰到敌人则结束游戏
+    
     if pygame.sprite.spritecollideany(player, enemies):
         text = font.render("Game Over!", True, (255, 0, 0))
         win.blit(text, (WIDTH // 2 - 80, HEIGHT // 2))
@@ -127,17 +127,17 @@ while running:
         pygame.quit()
         sys.exit()
 
-    # 难度提高
+    
     if coin_count >= N:
         enemy_speed = 5
 
     all_sprites.draw(win)
 
-    # 显示金币数量
+    # show coins numbers
     text = font.render(f"Coins: {coin_count}", True, BLACK)
     win.blit(text, (350, 10))
 
     pygame.display.update()
     clock.tick(60)
-    
+
 
