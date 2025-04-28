@@ -1,125 +1,181 @@
-import csv
 import psycopg2
+import csv
 
-def connect_db():
-    return psycopg2.connect(
-        dbname="phonebook1",  # 请替换成你自己的数据库名
-        user="postgres",  # 数据库用户名
-        password="S9281030124",  # 请替换成你自己的密码
-        host="localhost",  # 本地连接
-        port="5432"  # PostgreSQL 默认端口
+
+def create_phonebook_table():
+    conn = psycopg2.connect(
+        database="postgres",
+        user="postgres",
+        password="S9281030124",
+        host="localhost",
+        port="5432"
     )
-
-def create_table():
-    try:
-        conn = connect_db()
-        cursor = conn.cursor()
-
-        cursor.execute("""
+    cur = conn.cursor()
+    cur.execute("""
         CREATE TABLE IF NOT EXISTS phonebook (
             id SERIAL PRIMARY KEY,
-            name VARCHAR(100),
-            phone VARCHAR(20)
-        );
-        """)
+            first_name VARCHAR(100),
+            last_name VARCHAR(100),
+            phone_number VARCHAR(15) UNIQUE
+        )
+    """)
+    conn.commit()
+    cur.close()
+    conn.close()
 
-        conn.commit()
-        cursor.close()
-        conn.close()
-        print("✅ Кесте құрылды немесе бар кесте тексерілді.")
-    except Exception as e:
-        print(f"Ошибка: {e}")
+def add_contact():
+    first_name = input("Enter first name: ")
+    last_name = input("Enter last name: ")
+    phone_number = input("Enter phone number: ")
 
-def insert_from_csv(csv_file):
-    try:
-        conn = connect_db()
-        cursor = conn.cursor()
+    conn = psycopg2.connect(
+        database="postgres",
+        user="postgres",
+        password="S9281030124",
+        host="localhost",
+        port="5432"
+    )
+    cur = conn.cursor()
+    cur.execute("INSERT INTO phonebook (first_name, last_name, phone_number) VALUES (%s, %s, %s)", 
+                (first_name, last_name, phone_number))
+    conn.commit()
+    cur.close()
+    conn.close()    
 
-        with open(csv_file, 'r') as file:
-            csv_reader = csv.reader(file)
-            next(csv_reader)  # 跳过CSV的标题行（如果有的话）
-            for row in csv_reader:
-                name, phone = row
-                cursor.execute("""
-                INSERT INTO phonebook (name, phone)
-                VALUES (%s, %s);
-                """, (name, phone))
+def update_contact():
+    phone_number = input("Enter the phone number to update: ")
+    new_first_name = input("Enter new first name: ")
+    new_phone_number = input("Enter new phone number: ")
 
-        conn.commit()
-        cursor.close()
-        conn.close()
-        print("✅ CSV файлынан деректер енгізілді.")
-    except Exception as e:
-        print(f"Ошибка при чтении CSV файла: {e}")
+    conn = psycopg2.connect(
+        database="postgres",
+        user="postgres",
+        password="S9281030124",
+        host="localhost",
+        port="5432"
+    )
+    cur = conn.cursor()
+    cur.execute("UPDATE phonebook SET first_name = %s, phone_number = %s WHERE phone_number = %s", 
+                (new_first_name, new_phone_number, phone_number))
+    conn.commit()
+    cur.close()
+    conn.close()
 
-def display_all():
-    try:
-        conn = connect_db()
-        cursor = conn.cursor()
+def search_contacts():
+    search_term = input("Enter search term (first name, last name, phone number): ")
 
-        cursor.execute("SELECT * FROM phonebook;")
-        rows = cursor.fetchall()
-        
-        if rows:
-            for row in rows:
-                print(f"{row[0]} | {row[1]} | {row[2]}")
-        else:
-            print("❌ Кестеде ешқандай мәлімет жоқ.")
-        
-        cursor.close()
-        conn.close()
-    except Exception as e:
-        print(f"Ошибка: {e}")
+    conn = psycopg2.connect(
+        database="postgres",
+        user="postgres",
+        password="S9281030124",
+        host="localhost",
+        port="5432"
+    )
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM phonebook WHERE first_name LIKE %s OR last_name LIKE %s OR phone_number LIKE %s",
+                ('%' + search_term + '%', '%' + search_term + '%', '%' + search_term + '%'))
+    rows = cur.fetchall()
+    for row in rows:
+        print(row)
+    cur.close() 
+    conn.close()
 
-def menu():
+def delete_contact():
+    phone_number = input("Enter the phone number to delete: ")
+
+    conn = psycopg2.connect(
+        database="postgres",
+        user="postgres",
+        password="S9281030124",
+        host="localhost",
+        port="5432"
+    )
+    cur = conn.cursor()
+    cur.execute("DELETE FROM phonebook WHERE phone_number = %s", (phone_number,))
+    conn.commit()
+    cur.close()
+    conn.close()
+
+
+def load_data_from_csv(csv_file):
+    conn = psycopg2.connect(
+        database="postgres",
+        user="postgres",
+        password="S9281030124",
+        host="localhost",
+        port="5432"
+    )
+    cur = conn.cursor()
+
+    # Open the CSV file and read it
+    with open(csv_file, mode='r') as file:
+        csv_reader = csv.reader(file)
+        next(csv_reader)  # Skip header row if it exists
+
+        for row in csv_reader:
+            first_name, last_name, phone_number = row
+            # Insert data into the phonebook table
+            cur.execute("INSERT INTO phonebook (first_name, last_name, phone_number) VALUES (%s, %s, %s)",
+                        (first_name, last_name, phone_number))
+
+    conn.commit()
+    cur.close()
+    conn.close()
+
+
+
+def view_all_contacts():
+    conn = psycopg2.connect(
+        database="postgres",
+        user="postgres",
+        password="S9281030124",
+        host="localhost",
+        port="5432"
+    )
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM phonebook")
+    rows = cur.fetchall()
+    if rows:
+        print("PhoneBook Records:")
+        for row in rows:
+            print(f"ID: {row[0]}, First Name: {row[1]}, Last Name: {row[2]}, Phone Number: {row[3]}")
+    else:
+        print("No records found.")
+    cur.close()
+    conn.close()    
+
+
+def main():
+    create_phonebook_table()
+
     while True:
-        print("====================")
-        print("📱 PHONEBOOK МӘЗІР:")
-        print("1 - Консоль арқылы енгізу")
-        print("2 - CSV файлынан енгізу")
-        print("3 - Барлығын шығару")
-        print("4 - Жаңарту (Update)")
-        print("5 - Жою (Delete)")
-        print("6 - 9/5 басталатын телефондарды көру")
-        print("0 - Шығу")
-        print("====================")
-
-        choice = input("Команданы таңда: ")
+        print("\nPhoneBook System:")
+        print("1. Add Contact")
+        print("2. Update Contact")
+        print("3. Search Contacts")
+        print("4. Delete Contact")
+        print("5. Load Data from CSV")
+        print("6. View All Contacts")
+        print("7. Exit PhoneBook System")
+        choice = input("Choose an option: ")
 
         if choice == '1':
-            name = input("Аты-жөніңізді енгізіңіз: ")
-            phone = input("Телефон нөмірін енгізіңіз: ")
-            try:
-                conn = connect_db()
-                cursor = conn.cursor()
-
-                cursor.execute("""
-                INSERT INTO phonebook (name, phone)
-                VALUES (%s, %s);
-                """, (name, phone))
-
-                conn.commit()
-                cursor.close()
-                conn.close()
-                print("✅ Жаңа жазба енгізілді.")
-            except Exception as e:
-                print(f"Ошибка: {e}")
-        
+            add_contact()
         elif choice == '2':
-            csv_path = input("CSV файлының жолын енгіз: ")
-            insert_from_csv(csv_path)
-        
+            update_contact()
         elif choice == '3':
-            display_all()
-
-        elif choice == '0':
-            print("Шығу...")
+            search_contacts()
+        elif choice == '4':
+            delete_contact()
+        elif choice == '5':
+            csv_file = input("Enter the path to the CSV file: ")
+            load_data_from_csv(csv_file)
+        elif choice == '6':
+            view_all_contacts()
+        elif choice == '7':
             break
-
         else:
-            print("❌ Дұрыс команданы таңдаңыз!")
+            print("Invalid choice.")
 
 if __name__ == "__main__":
-    create_table()  # 创建表格
-    menu()
-
+    main()
